@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Dashboard</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f1626">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;600&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f6;--panel:#fff;--text:#14213d;--muted:#5b667a;--accent:#c26a00;--accent-ink:#fff;--line:#d8deea;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1626;--panel:#17213a;--text:#e9eef8;--muted:#93a0ba;--accent:#ffb54a;--accent-ink:#1a1204;--line:#26324f}}
+:root[data-theme="dark"]{--bg:#0f1626;--panel:#17213a;--text:#e9eef8;--muted:#93a0ba;--accent:#ffb54a;--accent-ink:#1a1204;--line:#26324f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--text);font:400 17px/1.45 Figtree,system-ui,sans-serif;min-height:100%}
+main{display:grid;gap:16px;padding:16px;max-width:1280px;margin:0 auto;
+grid-template-columns:1fr;grid-template-areas:"clock" "todos" "notes"}
+@media(min-width:800px){main{grid-template-columns:1.1fr 1fr;grid-template-areas:"clock todos" "notes todos";min-height:100vh;grid-template-rows:auto 1fr}}
+section{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px;display:flex;flex-direction:column;min-width:0}
+h2{font:600 18px/1.2 Sora,system-ui,sans-serif;margin:0 0 12px}
+#clock{grid-area:clock;flex-direction:row;align-items:center;gap:24px}
+#todos{grid-area:todos}
+#notes{grid-area:notes}
+.ring{position:relative;width:200px;height:200px;flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .track{stroke:var(--line)}
+.ring .sec{stroke:var(--accent);stroke-linecap:round}
+.ring .time{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font:300 52px/1 Sora,system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.ring .time small{font:600 16px Figtree,system-ui,sans-serif;color:var(--muted);letter-spacing:0;margin-top:8px;min-height:1em}
+.hello{font:600 22px/1.2 Sora,system-ui,sans-serif;margin:0 0 6px}
+.date{margin:0;color:var(--muted)}
+form{display:flex;gap:8px;margin-bottom:12px}
+input[type=text]{flex:1;min-width:0;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px}
+button{font:600 16px Figtree,system-ui,sans-serif;border:0;border-radius:12px;padding:0 20px;min-height:48px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+button.ghost{background:transparent;color:var(--muted);padding:0 12px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+ul{list-style:none;margin:0;padding:0;overflow:auto;flex:1}
+li{display:flex;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}
+li label{flex:1;display:flex;align-items:center;gap:12px;min-height:48px;cursor:pointer}
+li input{width:24px;height:24px;accent-color:var(--accent);flex:none}
+li.done span{text-decoration:line-through;color:var(--muted)}
+.empty{color:var(--muted);padding:12px 0}
+.meta{color:var(--muted);font-size:14px;margin:8px 0 0}
+textarea{flex:1;min-height:160px;width:100%;resize:none;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px}
+@media(max-width:560px){#clock{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<main>
+<section id="clock">
+  <div class="ring">
+    <svg viewBox="0 0 200 200" aria-hidden="true"><circle class="track" cx="100" cy="100" r="92" fill="none" stroke-width="6"/><circle class="sec" id="sec" cx="100" cy="100" r="92" fill="none" stroke-width="6" stroke-dasharray="578.05" stroke-dashoffset="578.05"/></svg>
+    <div class="time" aria-live="off"><span id="time">--:--</span><small id="ampm"></small></div>
+  </div>
+  <div>
+    <p class="hello" id="hello">Hello, OSMOMOA</p>
+    <p class="date" id="date"></p>
+  </div>
+</section>
+
+<section id="todos">
+  <h2>To-do</h2>
+  <form id="addForm">
+    <input type="text" id="newTask" placeholder="Add a task" aria-label="New task" autocomplete="off">
+    <button type="submit">Add</button>
+  </form>
+  <ul id="list"></ul>
+  <p class="meta"><span id="count"></span> <button class="ghost" id="clearDone" type="button">Clear done</button></p>
+</section>
+
+<section id="notes">
+  <h2>Notes</h2>
+  <textarea id="note" aria-label="Notes" placeholder="Write anything here. It saves on this device as you type."></textarea>
+  <p class="meta"><span id="saved"></span> <button class="ghost" id="exportBtn" type="button" hidden>Export tasks and notes</button></p>
+</section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } }
+};
+
+/* Clock */
+const C = 2 * Math.PI * 92;
+function tick(){
+  const n = new Date(), h = n.getHours();
+  const parts = new Intl.DateTimeFormat([], {hour:'numeric', minute:'2-digit'}).formatToParts(n);
+  $('time').textContent = parts.filter(p => p.type === 'hour' || p.type === 'minute' || p.type === 'literal').map(p => p.value).join('').trim();
+  const dp = parts.find(p => p.type === 'dayPeriod'); $('ampm').textContent = dp ? dp.value : '';
+  $('sec').style.strokeDashoffset = C * (1 - n.getSeconds() / 60);
+  $('date').textContent = n.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
+  $('hello').textContent = (h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening') + ', OSMOMOA';
+}
+tick(); setInterval(tick, 1000);
+
+/* To-dos */
+let todos = store.get('todos', []);
+function render(){
+  const ul = $('list'); ul.innerHTML = '';
+  if(!todos.length){ const p = document.createElement('li'); p.className = 'empty'; p.textContent = 'Nothing to do yet. Add your first task above.'; ul.appendChild(p); }
+  todos.forEach((t, i) => {
+    const li = document.createElement('li'); li.className = t.done ? 'done' : '';
+    const lab = document.createElement('label');
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!t.done;
+    cb.onchange = () => { t.done = cb.checked; save(); };
+    const sp = document.createElement('span'); sp.textContent = t.text;
+    lab.append(cb, sp);
+    const del = document.createElement('button'); del.className = 'ghost'; del.textContent = 'Delete';
+    del.setAttribute('aria-label', 'Delete ' + t.text);
+    del.onclick = () => { todos.splice(i, 1); save(); };
+    li.append(lab, del); ul.appendChild(li);
+  });
+  const left = todos.filter(t => !t.done).length;
+  $('count').textContent = left + (left === 1 ? ' task left' : ' tasks left');
+}
+function save(){ store.set('todos', todos); render(); }
+$('addForm').onsubmit = e => {
+  e.preventDefault();
+  const v = $('newTask').value.trim(); if(!v) return;
+  todos.unshift({text: v, done: false}); $('newTask').value = ''; save();
+};
+$('clearDone').onclick = () => { todos = todos.filter(t => !t.done); save(); };
+render();
+
+/* Notes */
+$('note').value = store.get('note', '');
+let timer;
+$('note').oninput = () => {
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    const ok = store.set('note', $('note').value);
+    $('saved').textContent = ok ? 'Saved' : 'Could not save on this device';
+  }, 400);
+};
+/* Export */
+(async () => {
+  try {
+    if (!(window.claude && window.claude.use)) return;
+    const dl = await window.claude.use('downloads');
+    if (!dl) return;
+    const btn = $('exportBtn'); btn.hidden = false;
+    btn.onclick = async () => {
+      const lines = ['TO-DO'].concat(todos.length ? todos.map(t => (t.done ? '[x] ' : '[ ] ') + t.text) : ['(none)']);
+      lines.push('', 'NOTES', $('note').value || '(empty)');
+      try { await dl.save({filename: 'dashboard-export.txt', data: lines.join('\n')}); $('saved').textContent = 'Exported'; }
+      catch (e) { if (!e || e.code !== 'declined') $('saved').textContent = 'Export is not available here'; }
+    };
+  } catch (e) {}
+})();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
+</script>
+</body>
+</html>
